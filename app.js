@@ -1,58 +1,45 @@
 /* ==========================================================================
-   TripSync — app.js
-   Vanilla JS. No frameworks. Renders views by injecting HTML into the DOM
-   and toggles `.active` on <section class="screen"> elements to navigate.
+   TripSync — app.js (Migrado a Firebase Firestore)
    ========================================================================== */
 
-/* --------------------------------------------------------------------------
- * 1. CONFIG — paste your Supabase project credentials here
- * ------------------------------------------------------------------------ */
-const SUPABASE_URL = "YOUR_SUPABASE_URL"; // e.g. https://xxxxx.supabase.co
-const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+/* 1. PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE (El objeto firebaseConfig) */
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
-/*
- * --- Expected table (run this once in the Supabase SQL editor) ---
- *
- * create table itinerario (
- *   id            uuid primary key default gen_random_uuid(),
- *   codigo_viaje  text not null,               -- shared "trip code" used to
- *                                               -- group events by trip
- *   fecha         date not null,
- *   hora          time not null,
- *   titulo        text not null,
- *   ubicacion     text,
- *   notas         text,
- *   creado_por    text,
- *   created_at    timestamptz default now()
- * );
- *
- * alter table itinerario enable row level security;
- *
- * -- Anyone signed in (including anonymous sign-in) can read/write.
- * -- The "protection" here comes from requiring auth + knowing the trip
- * -- code, which fits a low-friction group-of-friends use case.
- * create policy "auth can read" on itinerario
- *   for select using (auth.role() = 'authenticated');
- * create policy "auth can write" on itinerario
- *   for insert with check (auth.role() = 'authenticated');
- * create policy "auth can update" on itinerario
- *   for update using (auth.role() = 'authenticated');
- * create policy "auth can delete" on itinerario
- *   for delete using (auth.role() = 'authenticated');
- *
- * -- In Authentication > Settings, enable "Anonymous sign-ins".
- * -- Enable Realtime for the `itinerario` table (Database > Replication).
- */
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAyI0hZ3Kt4wpW_e3_uJ6tWmrE_8aOj_Zc",
+  authDomain: "tripsync-58ded.firebaseapp.com",
+  databaseURL: "https://tripsync-58ded-default-rtdb.firebaseio.com",
+  projectId: "tripsync-58ded",
+  storageBucket: "tripsync-58ded.firebasestorage.app",
+  messagingSenderId: "854250106343",
+  appId: "1:854250106343:web:8f8249f22bccd21dffe142",
+  measurementId: "G-NJMT0T765X"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+
+// Inicializar Firebase y Firestore
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.firestore();
 
 /* --------------------------------------------------------------------------
- * 2. STATE
+ * 2. STATE & VARIABLES
  * ------------------------------------------------------------------------ */
-let supabase = null;
 let currentTripCode = null;
 let currentUserName = null;
 let events = [];
-let realtimeChannel = null;
-let openNotesId = null; // which event card currently has expanded notes
+let unsubscribe = null; // Para detener la escucha en tiempo real
+let openNotesId = null; 
 
 const LS_KEYS = {
   tripCode: "tripsync_trip_code",
@@ -95,14 +82,12 @@ const el = {
   inputNotas: document.getElementById("input-notas"),
   formError: document.getElementById("form-error"),
   btnDeleteEvent: document.getElementById("btn-delete-event"),
-
   toastContainer: document.getElementById("toast-container"),
 };
 
 /* --------------------------------------------------------------------------
  * 4. UTILITIES
  * ------------------------------------------------------------------------ */
-
 function showScreen(name) {
   Object.values(el.screens).forEach((s) => s.classList.remove("active"));
   el.screens[name].classList.add("active");
@@ -130,59 +115,25 @@ const WEEKDAYS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes
 const MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 
 function formatLongDate(dateStr) {
-  // dateStr: "YYYY-MM-DD"
   const [y, m, d] = dateStr.split("-").map(Number);
   const dt = new Date(y, m - 1, d);
   return `${WEEKDAYS[dt.getDay()]} ${d} de ${MONTHS[m - 1]}`;
 }
 
 function formatTime(timeStr) {
-  // timeStr: "HH:MM:SS" or "HH:MM"
   const [h, m] = timeStr.split(":").map(Number);
   const period = h >= 12 ? "PM" : "AM";
   const h12 = h % 12 === 0 ? 12 : h % 12;
   return `${String(h12).padStart(2, "0")}:${String(m).padStart(2, "0")} ${period}`;
 }
 
-function locationIconSvg() {
-  return '<svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>';
-}
-
-function chevronSvg() {
-  return '<svg viewBox="0 0 24 24"><path d="M12 15.5l-6-6 1.41-1.41L12 12.67l4.59-4.58L18 9.5z"/></svg>';
-}
+function locationIconSvg() { return '<svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>'; }
+function chevronSvg() { return '<svg viewBox="0 0 24 24"><path d="M12 15.5l-6-6 1.41-1.41L12 12.67l4.59-4.58L18 9.5z"/></svg>'; }
 
 /* --------------------------------------------------------------------------
- * 5. SUPABASE INIT
+ * 5. LOGIN FLOW
  * ------------------------------------------------------------------------ */
-
-function initSupabaseClient() {
-  if (!window.supabase || SUPABASE_URL.includes("YOUR_SUPABASE")) {
-    console.warn("TripSync: configura SUPABASE_URL y SUPABASE_ANON_KEY en app.js");
-    return null;
-  }
-  return window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-}
-
-async function ensureAuthSession() {
-  if (!supabase) return false;
-  const { data } = await supabase.auth.getSession();
-  if (data.session) return true;
-
-  const { error } = await supabase.auth.signInAnonymously();
-  if (error) {
-    console.error("Auth anónima falló:", error.message);
-    toast("No se pudo conectar. Revisa tu configuración de Supabase.", "error");
-    return false;
-  }
-  return true;
-}
-
-/* --------------------------------------------------------------------------
- * 6. LOGIN FLOW
- * ------------------------------------------------------------------------ */
-
-async function handleLoginSubmit(e) {
+function handleLoginSubmit(e) {
   e.preventDefault();
   const tripCode = sanitizeTripCode(el.inputTripCode.value);
   const userName = el.inputUserName.value.trim();
@@ -192,44 +143,23 @@ async function handleLoginSubmit(e) {
     return;
   }
 
-  setJoinLoading(true);
-  const ok = await joinTrip(tripCode, userName);
-  setJoinLoading(false);
-
-  if (ok) {
-    localStorage.setItem(LS_KEYS.tripCode, tripCode);
-    localStorage.setItem(LS_KEYS.userName, userName);
-    toast(`Conectado al viaje ${tripCode}`, "success");
-  }
+  joinTrip(tripCode, userName);
 }
 
-function setJoinLoading(isLoading) {
-  el.btnJoin.disabled = isLoading;
-  el.btnJoin.querySelector(".btn-label").classList.toggle("hidden", isLoading);
-  el.btnJoin.querySelector(".btn-spinner").classList.toggle("hidden", !isLoading);
-}
-
-async function joinTrip(tripCode, userName) {
+function joinTrip(tripCode, userName) {
   currentTripCode = tripCode;
   currentUserName = userName;
+  localStorage.setItem(LS_KEYS.tripCode, tripCode);
+  localStorage.setItem(LS_KEYS.userName, userName);
 
-  if (supabase) {
-    const authed = await ensureAuthSession();
-    if (!authed) {
-      // Fall back to offline/cached mode
-      loadCachedEvents();
-      enterTimelineScreen();
-      return true;
-    }
-    await fetchEvents();
+  if (navigator.onLine) {
     subscribeRealtime();
   } else {
     loadCachedEvents();
-    toast("Modo sin conexión a Supabase (revisa app.js)", "info");
+    toast("Modo sin conexión a Firebase", "info");
   }
 
   enterTimelineScreen();
-  return true;
 }
 
 function enterTimelineScreen() {
@@ -239,9 +169,9 @@ function enterTimelineScreen() {
 }
 
 function leaveTrip() {
-  if (realtimeChannel) {
-    supabase.removeChannel(realtimeChannel);
-    realtimeChannel = null;
+  if (unsubscribe) {
+    unsubscribe();
+    unsubscribe = null;
   }
   localStorage.removeItem(LS_KEYS.tripCode);
   localStorage.removeItem(LS_KEYS.userName);
@@ -254,35 +184,47 @@ function leaveTrip() {
 }
 
 /* --------------------------------------------------------------------------
- * 7. DATA — fetch, cache, realtime
+ * 6. DATA — Realtime con Firebase
  * ------------------------------------------------------------------------ */
+function subscribeRealtime() {
+  if (!currentTripCode) return;
+  
+  if (unsubscribe) unsubscribe(); // Limpiar si ya había una suscripción
+  
+  const pill = el.livePill;
+  pill.classList.remove("offline");
+  pill.innerHTML = '<span class="live-dot"></span> Sincronizando...';
 
-async function fetchEvents() {
-  if (!supabase || !currentTripCode) return;
-  const { data, error } = await supabase
-    .from("itinerario")
-    .select("*")
-    .eq("codigo_viaje", currentTripCode)
-    .order("fecha", { ascending: true })
-    .order("hora", { ascending: true });
-
-  if (error) {
-    console.error(error);
-    toast("No se pudo cargar el itinerario", "error");
-    loadCachedEvents();
-    return;
-  }
-
-  events = data || [];
-  cacheEvents();
-  renderItinerary();
+  // Escuchar en tiempo real a la colección de Firestore
+  unsubscribe = db.collection("itinerarios")
+    .where("codigo_viaje", "==", currentTripCode)
+    .orderBy("fecha", "asc")
+    .orderBy("hora", "asc")
+    .onSnapshot((querySnapshot) => {
+      events = [];
+      querySnapshot.forEach((doc) => {
+        events.push({ id: doc.id, ...doc.data() });
+      });
+      
+      cacheEvents();
+      renderItinerary();
+      
+      pill.classList.remove("offline");
+      pill.innerHTML = '<span class="live-dot"></span> En vivo';
+    }, (error) => {
+      console.error("Error suscribiéndose a Firebase:", error);
+      pill.classList.add("offline");
+      pill.innerHTML = '<span class="live-dot"></span> Error de conexión';
+      loadCachedEvents();
+      renderItinerary();
+    });
 }
 
 function cacheEvents() {
   if (!currentTripCode) return;
   try {
     localStorage.setItem(LS_KEYS.cachedEvents + currentTripCode, JSON.stringify(events));
-  } catch (_) { /* storage full or unavailable, ignore */ }
+  } catch (_) { }
 }
 
 function loadCachedEvents() {
@@ -290,68 +232,12 @@ function loadCachedEvents() {
   try {
     const raw = localStorage.getItem(LS_KEYS.cachedEvents + currentTripCode);
     events = raw ? JSON.parse(raw) : [];
-  } catch (_) {
-    events = [];
-  }
-}
-
-function subscribeRealtime() {
-  if (!supabase || !currentTripCode) return;
-  if (realtimeChannel) supabase.removeChannel(realtimeChannel);
-
-  realtimeChannel = supabase
-    .channel(`itinerario-${currentTripCode}`)
-    .on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "itinerario",
-        filter: `codigo_viaje=eq.${currentTripCode}`,
-      },
-      (payload) => {
-        applyRealtimeChange(payload);
-      }
-    )
-    .subscribe((status) => {
-      const pill = el.livePill;
-      if (status === "SUBSCRIBED") {
-        pill.classList.remove("offline");
-        pill.querySelector("span:last-child") && (pill.lastChild.textContent = " En vivo");
-        pill.innerHTML = '<span class="live-dot"></span> En vivo';
-      } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
-        pill.classList.add("offline");
-        pill.innerHTML = '<span class="live-dot"></span> Reconectando';
-      }
-    });
-}
-
-function applyRealtimeChange(payload) {
-  const { eventType, new: newRow, old: oldRow } = payload;
-
-  if (eventType === "INSERT") {
-    if (!events.some((ev) => ev.id === newRow.id)) {
-      events.push(newRow);
-      toast(`${newRow.creado_por || "Alguien"} agregó "${newRow.titulo}"`, "info");
-    }
-  } else if (eventType === "UPDATE") {
-    const idx = events.findIndex((ev) => ev.id === newRow.id);
-    if (idx > -1) events[idx] = newRow;
-    toast(`"${newRow.titulo}" fue actualizado`, "info");
-  } else if (eventType === "DELETE") {
-    events = events.filter((ev) => ev.id !== oldRow.id);
-    toast("Un evento fue eliminado", "info");
-  }
-
-  events.sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora));
-  cacheEvents();
-  renderItinerary();
+  } catch (_) { events = []; }
 }
 
 /* --------------------------------------------------------------------------
- * 8. RENDER — renderItinerary()
+ * 7. RENDER — renderItinerary()
  * ------------------------------------------------------------------------ */
-
 function renderItinerary() {
   const container = el.timelineContainer;
   container.innerHTML = "";
@@ -366,7 +252,6 @@ function renderItinerary() {
     return;
   }
 
-  // Group by fecha, preserving chronological order
   const groups = [];
   const byDate = new Map();
   for (const ev of events) {
@@ -424,13 +309,11 @@ function renderEventCard(ev) {
 function attachCardListeners() {
   el.timelineContainer.querySelectorAll(".event-card").forEach((card) => {
     const id = card.dataset.id;
-
     const editTrigger = card.querySelector('[data-role="edit-trigger"]');
     editTrigger?.addEventListener("click", (e) => {
       if (e.target.closest('[data-role="toggle-notes"]')) return;
       openSheetForEdit(id);
     });
-
     const toggleBtn = card.querySelector('[data-role="toggle-notes"]');
     toggleBtn?.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -441,9 +324,8 @@ function attachCardListeners() {
 }
 
 /* --------------------------------------------------------------------------
- * 9. BOTTOM SHEET — add / edit event
+ * 8. BOTTOM SHEET — add / edit event
  * ------------------------------------------------------------------------ */
-
 function openSheetForCreate() {
   el.sheetTitle.textContent = "Nuevo evento";
   el.formEvent.reset();
@@ -453,7 +335,6 @@ function openSheetForCreate() {
 
   const today = new Date();
   el.inputFecha.value = today.toISOString().slice(0, 10);
-
   openSheet();
 }
 
@@ -470,7 +351,6 @@ function openSheetForEdit(id) {
   el.inputNotas.value = ev.notas || "";
   el.btnDeleteEvent.classList.remove("hidden");
   el.formError.classList.add("hidden");
-
   openSheet();
 }
 
@@ -513,42 +393,23 @@ async function handleEventFormSubmit(e) {
     ubicacion: ubicacion || null,
     notas: notas || null,
     creado_por: currentUserName,
+    created_at: firebase.firestore.FieldValue.serverTimestamp() // Timestamp de Firebase
   };
 
   const btn = document.getElementById("btn-save-event");
   btn.disabled = true;
 
   try {
-    if (!supabase) {
-      // Offline fallback: mutate local cache only
-      if (id) {
-        const idx = events.findIndex((ev) => String(ev.id) === String(id));
-        if (idx > -1) events[idx] = { ...events[idx], ...payload };
-      } else {
-        events.push({ id: `local-${Date.now()}`, ...payload });
-      }
-      cacheEvents();
-      renderItinerary();
-      toast("Evento guardado (sin conexión a Supabase)", "info");
-      closeSheet();
-      return;
-    }
-
     if (id) {
-      const { error } = await supabase.from("itinerario").update(payload).eq("id", id);
-      if (error) throw error;
+      await db.collection("itinerarios").doc(id).update(payload);
     } else {
-      const { error } = await supabase.from("itinerario").insert(payload);
-      if (error) throw error;
+      await db.collection("itinerarios").add(payload);
     }
-
     toast("Evento guardado", "success");
     closeSheet();
-    // Realtime subscription will also push this update; refetch as a safety net
-    await fetchEvents();
   } catch (err) {
     console.error(err);
-    showFormError(err.message || "No se pudo guardar el evento.");
+    showFormError("No se pudo guardar el evento. Revisa tu conexión.");
   } finally {
     btn.disabled = false;
   }
@@ -560,20 +421,12 @@ async function handleDeleteEvent() {
   if (!confirm("¿Eliminar este evento del itinerario?")) return;
 
   try {
-    if (supabase) {
-      const { error } = await supabase.from("itinerario").delete().eq("id", id);
-      if (error) throw error;
-      await fetchEvents();
-    } else {
-      events = events.filter((ev) => String(ev.id) !== String(id));
-      cacheEvents();
-      renderItinerary();
-    }
+    await db.collection("itinerarios").doc(id).delete();
     toast("Evento eliminado", "success");
     closeSheet();
   } catch (err) {
     console.error(err);
-    showFormError(err.message || "No se pudo eliminar.");
+    showFormError("No se pudo eliminar.");
   }
 }
 
@@ -583,9 +436,8 @@ function showFormError(msg) {
 }
 
 /* --------------------------------------------------------------------------
- * 10. CONNECTIVITY
+ * 9. CONNECTIVITY
  * ------------------------------------------------------------------------ */
-
 function updateConnectivityUI() {
   const online = navigator.onLine;
   el.offlineBanner.classList.toggle("hidden", online);
@@ -597,8 +449,7 @@ function updateConnectivityUI() {
 
 window.addEventListener("online", () => {
   updateConnectivityUI();
-  if (currentTripCode && supabase) {
-    fetchEvents();
+  if (currentTripCode) {
     subscribeRealtime();
   }
   toast("Conexión restaurada", "success");
@@ -610,9 +461,8 @@ window.addEventListener("offline", () => {
 });
 
 /* --------------------------------------------------------------------------
- * 11. INIT
+ * 10. INIT
  * ------------------------------------------------------------------------ */
-
 function attachEventListeners() {
   el.formLogin.addEventListener("submit", handleLoginSubmit);
   el.btnAddEvent.addEventListener("click", openSheetForCreate);
@@ -623,43 +473,28 @@ function attachEventListeners() {
   el.btnDeleteEvent.addEventListener("click", handleDeleteEvent);
 }
 
-async function init() {
+function init() {
   attachEventListeners();
   updateConnectivityUI();
-  supabase = initSupabaseClient();
 
   if ("serviceWorker" in navigator) {
     try {
-      await navigator.serviceWorker.register("sw.js");
+      navigator.serviceWorker.register("sw.js");
     } catch (err) {
       console.warn("SW registration failed:", err);
     }
   }
 
-  // Auto-rejoin if a session was persisted
   const savedTripCode = localStorage.getItem(LS_KEYS.tripCode);
   const savedUserName = localStorage.getItem(LS_KEYS.userName);
 
-  setTimeout(async () => {
+  setTimeout(() => {
     if (savedTripCode && savedUserName) {
-      currentTripCode = savedTripCode;
-      currentUserName = savedUserName;
-      if (supabase) {
-        const authed = await ensureAuthSession();
-        if (authed) {
-          await fetchEvents();
-          subscribeRealtime();
-        } else {
-          loadCachedEvents();
-        }
-      } else {
-        loadCachedEvents();
-      }
-      enterTimelineScreen();
+      joinTrip(savedTripCode, savedUserName);
     } else {
       showScreen("login");
     }
-  }, 500); // brief splash for perceived polish
+  }, 500); 
 }
 
 document.addEventListener("DOMContentLoaded", init);
