@@ -2,31 +2,22 @@
    TripSync — app.js (Migrado a Firebase Firestore)
    ========================================================================== */
 
-/* 1. PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE (El objeto firebaseConfig) */
-// Import the functions you need from the SDKs you need
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyAyI0hZ3Kt4wpW_e3_uJ6tWmrE_8aOj_Zc",
-  authDomain: "tripsync-58ded.firebaseapp.com",
-  databaseURL: "https://tripsync-58ded-default-rtdb.firebaseio.com",
-  projectId: "tripsync-58ded",
-  storageBucket: "tripsync-58ded.firebasestorage.app",
-  messagingSenderId: "854250106343",
-  appId: "1:854250106343:web:8f8249f22bccd21dffe142",
-  measurementId: "G-NJMT0T765X"
+  apiKey: "TU_API_KEY",
+  authDomain: "tu-proyecto.firebaseapp.com",
+  projectId: "tu-proyecto",
+  storageBucket: "tu-proyecto.appspot.com",
+  messagingSenderId: "TUS_NUMEROS",
+  appId: "TU_APP_ID"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-
-// Inicializar Firebase y Firestore
+// Inicializar Firebase (Versión Compat)
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
 const db = firebase.firestore();
+
+/* ------------------------------------------------------------------------
 
 /* --------------------------------------------------------------------------
  * 2. STATE & VARIABLES
