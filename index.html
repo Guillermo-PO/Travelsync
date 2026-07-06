@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1" />
+  <title>TripSync · Itinerario colaborativo</title>
+  <meta name="description" content="Planea tu viaje en grupo, en tiempo real." />
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#16263B" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="TripSync" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="icon" href="icons/icon-192.png" />
+
+  <!-- Fonts: geometric display + humanist body + mono for times -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Supabase JS client (UMD build) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+  <!-- ============ OFFLINE BANNER ============ -->
+  <div id="offline-banner" class="offline-banner hidden" role="status">
+    <span class="dot"></span> Sin conexión — viendo la última versión guardada
+  </div>
+
+  <!-- ============ SCREEN: SPLASH / LOADING ============ -->
+  <section id="screen-splash" class="screen active">
+    <div class="splash-mark">
+      <svg viewBox="0 0 100 100" class="splash-plane" aria-hidden="true">
+        <circle cx="50" cy="50" r="36" fill="none" stroke="var(--accent-teal)" stroke-width="2" stroke-dasharray="6 6"/>
+        <path d="M30 62 L78 24 L50 42 L44 70 L38 56 Z" fill="var(--paper)"/>
+      </svg>
+    </div>
+    <p class="splash-label">TripSync</p>
+  </section>
+
+  <!-- ============ SCREEN: LOGIN (Código de viaje) ============ -->
+  <section id="screen-login" class="screen">
+    <div class="login-wrap">
+      <header class="login-header">
+        <div class="stub-tag">BOARDING PASS</div>
+        <h1 class="brand-title">Trip<span>Sync</span></h1>
+        <p class="brand-sub">Un itinerario. Todo el grupo. En vivo.</p>
+      </header>
+
+      <form id="form-login" class="login-form" autocomplete="off">
+        <label class="field">
+          <span class="field-label">Código del viaje</span>
+          <input
+            id="input-trip-code"
+            class="input input-code"
+            type="text"
+            inputmode="text"
+            placeholder="EJ. CANCUN2026"
+            maxlength="24"
+            required
+          />
+        </label>
+
+        <label class="field">
+          <span class="field-label">Tu nombre</span>
+          <input
+            id="input-user-name"
+            class="input"
+            type="text"
+            placeholder="¿Cómo te llamas?"
+            maxlength="30"
+            required
+          />
+        </label>
+
+        <button type="submit" class="btn btn-primary btn-block" id="btn-join">
+          <span class="btn-label">Entrar al viaje</span>
+          <span class="btn-spinner hidden"></span>
+        </button>
+
+        <p class="login-hint">¿No tienes un código? Créalo tú mismo — cualquier palabra que compartas con tu grupo funciona como código de viaje.</p>
+      </form>
+    </div>
+  </section>
+
+  <!-- ============ SCREEN: TIMELINE (principal) ============ -->
+  <section id="screen-timeline" class="screen">
+    <header class="topbar">
+      <div class="topbar-left">
+        <p class="topbar-eyebrow" id="label-trip-code">—</p>
+        <h1 class="topbar-title">Itinerario</h1>
+      </div>
+      <div class="topbar-right">
+        <span class="live-pill" id="live-pill">
+          <span class="live-dot"></span> En vivo
+        </span>
+        <button class="icon-btn" id="btn-leave" title="Salir del viaje" aria-label="Salir del viaje">
+          <svg viewBox="0 0 24 24"><path d="M15 17l-1.41-1.41L16.17 13H8v-2h8.17l-2.58-2.59L15 7l5 5-5 5zM4 4h8v2H4v12h8v2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main id="timeline-container" class="timeline-container">
+      <!-- rendered dynamically by renderItinerary() -->
+    </main>
+
+    <button class="fab" id="btn-add-event" aria-label="Agregar evento">
+      <svg viewBox="0 0 24 24"><path d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z"/></svg>
+      <span class="fab-label">Agregar</span>
+    </button>
+  </section>
+
+  <!-- ============ BOTTOM SHEET: Agregar / Editar evento ============ -->
+  <div id="sheet-backdrop" class="sheet-backdrop hidden"></div>
+  <section id="sheet-event" class="sheet" aria-hidden="true">
+    <div class="sheet-handle"></div>
+    <header class="sheet-header">
+      <h2 id="sheet-title">Nuevo evento</h2>
+      <button class="icon-btn" id="btn-close-sheet" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24"><path d="M18.3 5.71L12 12l6.3 6.29-1.41 1.41L10.59 13.41 4.29 19.71 2.88 18.3 9.17 12 2.88 5.71 4.29 4.29l6.3 6.3 6.29-6.3z"/></svg>
+      </button>
+    </header>
+
+    <form id="form-event" class="event-form">
+      <input type="hidden" id="input-event-id" />
+
+      <div class="field-row">
+        <label class="field">
+          <span class="field-label">Fecha</span>
+          <input id="input-fecha" class="input" type="date" required />
+        </label>
+        <label class="field">
+          <span class="field-label">Hora</span>
+          <input id="input-hora" class="input" type="time" required />
+        </label>
+      </div>
+
+      <label class="field">
+        <span class="field-label">Título</span>
+        <input id="input-titulo" class="input" type="text" placeholder="Ej. Vuelo a Cancún" maxlength="80" required />
+      </label>
+
+      <label class="field">
+        <span class="field-label">Ubicación <em>(opcional)</em></span>
+        <input id="input-ubicacion" class="input" type="text" placeholder="Ej. Aeropuerto Terminal 2" maxlength="100" />
+      </label>
+
+      <label class="field">
+        <span class="field-label">Notas <em>(opcional)</em></span>
+        <textarea id="input-notas" class="input textarea" rows="3" placeholder="Detalles, reservación, links..." maxlength="500"></textarea>
+      </label>
+
+      <p class="form-error hidden" id="form-error"></p>
+
+      <div class="sheet-actions">
+        <button type="button" class="btn btn-ghost hidden" id="btn-delete-event">Eliminar</button>
+        <button type="submit" class="btn btn-primary btn-block" id="btn-save-event">Guardar evento</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- ============ TOAST ============ -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
