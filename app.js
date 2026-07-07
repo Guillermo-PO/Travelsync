@@ -20,10 +20,10 @@ if (!firebase.apps.length) {
 }
 const db = firebase.firestore();
 
-// 🚀 SOLUCIÓN AL PRIMER INICIO: Persistencia Multi-Pestaña Nativa
-// Permite compartir la base de datos si la app está abierta en Safari y como PWA a la vez
-db.enableMultiTabIndexedDbPersistence().catch(function(err) {
-  console.warn("Multi-tab persistence state:", err.code);
+// 🚀 SOLUCIÓN: Persistencia Multi-Pestaña para la versión "Compat"
+db.enablePersistence({ synchronizeTabs: true }).catch(function(err) {
+  console.warn("Error de persistencia:", err.code);
+});
 });
 
 /* --------------------------------------------------------------------------
