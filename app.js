@@ -24,7 +24,6 @@ const db = firebase.firestore();
 db.enablePersistence({ synchronizeTabs: true }).catch(function(err) {
   console.warn("Error de persistencia:", err.code);
 });
-});
 
 /* --------------------------------------------------------------------------
  * 2. STATE & VARIABLES
