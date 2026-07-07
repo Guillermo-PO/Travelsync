@@ -77,12 +77,15 @@
   touch-action: manipulation !important; 
 }
 
-html, body, .screen, .timeline-container, .day-tabs, .event-card, .sheet-backdrop {
+/* 1. Solo estos contenedores maestros deben medir el 100% de la pantalla */
+html, body, .screen {
   height: 100%;
   overscroll-behavior-y: none;
+}
+
+/* 2. Protección global anti-congelamiento para iOS PWA */
+html, body, .screen, .timeline-container, .day-tabs, .event-card, .sheet-backdrop {
   touch-action: manipulation !important;
-  
-  /* 🚀 ELIMINA EL CONGELAMIENTO: Bloquea la selección de texto en el fondo */
   -webkit-user-select: none; 
   user-select: none;
 }
