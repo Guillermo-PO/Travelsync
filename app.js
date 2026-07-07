@@ -1,7 +1,8 @@
 /* ==========================================================================
-   TripSync — app.js (Migrado a Firebase Firestore)
+   TripSync — app.js (Firebase Firestore Optimizado)
    ========================================================================== */
 
+/* 1. PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE */
 const firebaseConfig = {
   apiKey: "TU_API_KEY",
   authDomain: "tu-proyecto.firebaseapp.com",
@@ -11,13 +12,11 @@ const firebaseConfig = {
   appId: "TU_APP_ID"
 };
 
-// Inicializar Firebase (Versión Compat)
+// Inicializar Firebase
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
 const db = firebase.firestore();
-
-/* ------------------------------------------------------------------------
 
 /* --------------------------------------------------------------------------
  * 2. STATE & VARIABLES
@@ -25,7 +24,7 @@ const db = firebase.firestore();
 let currentTripCode = null;
 let currentUserName = null;
 let events = [];
-let unsubscribe = null; // Para detener la escucha en tiempo real
+let unsubscribe = null; 
 let openNotesId = null; 
 
 const LS_KEYS = {
@@ -176,13 +175,12 @@ function leaveTrip() {
 function subscribeRealtime() {
   if (!currentTripCode) return;
   
-  if (unsubscribe) unsubscribe(); // Limpiar si ya había una suscripción
+  if (unsubscribe) unsubscribe();
   
   const pill = el.livePill;
   pill.classList.remove("offline");
   pill.innerHTML = '<span class="live-dot"></span> Sincronizando...';
 
-  // Escuchar en tiempo real a la colección (SIN los orderBy para evitar el error de Índice de Firebase)
   unsubscribe = db.collection("itinerarios")
     .where("codigo_viaje", "==", currentTripCode)
     .onSnapshot((querySnapshot) => {
@@ -191,7 +189,7 @@ function subscribeRealtime() {
         events.push({ id: doc.id, ...doc.data() });
       });
       
-      // ✅ ORDENAMOS LOS EVENTOS MANUALMENTE AQUÍ EN LUGAR DE PEDÍRSELO A LA BASE DE DATOS
+      // Ordenamiento manual para evitar errores de Índices en Firebase
       events.sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora));
       
       cacheEvents();
@@ -200,7 +198,7 @@ function subscribeRealtime() {
       pill.classList.remove("offline");
       pill.innerHTML = '<span class="live-dot"></span> En vivo';
     }, (error) => {
-      console.error("Error suscribiéndose a Firebase:", error);
+      console.error("Error suscribiéndose:", error);
       pill.classList.add("offline");
       pill.innerHTML = '<span class="live-dot"></span> Error de conexión';
       loadCachedEvents();
@@ -224,7 +222,7 @@ function loadCachedEvents() {
 }
 
 /* --------------------------------------------------------------------------
- * 7. RENDER — renderItinerary()
+ * 7. RENDER
  * ------------------------------------------------------------------------ */
 function renderItinerary() {
   const container = el.timelineContainer;
@@ -312,7 +310,7 @@ function attachCardListeners() {
 }
 
 /* --------------------------------------------------------------------------
- * 8. BOTTOM SHEET — add / edit event
+ * 8. BOTTOM SHEET
  * ------------------------------------------------------------------------ */
 function openSheetForCreate() {
   el.sheetTitle.textContent = "Nuevo evento";
@@ -358,7 +356,7 @@ function closeSheet() {
   setTimeout(() => el.sheetBackdrop.classList.add("hidden"), 220);
 }
 
-async function handleEventFormSubmit(e) {
+function handleEventFormSubmit(e) {
   e.preventDefault();
 
   const id = el.inputEventId.value;
@@ -384,108 +382,17 @@ async function handleEventFormSubmit(e) {
     created_at: firebase.firestore.FieldValue.serverTimestamp()
   };
 
-  const btn = document.getElementById("btn-save-event");
-  btn.disabled = true;
+  // 1. Cerramos el panel inmediatamente para una UI súper rápida
+  closeSheet();
 
-  try {
-    // ✅ QUITAMOS EL "await" PARA APROVECHAR LA VELOCIDAD DE FIREBASE
-    if (id) {
-      db.collection("itinerarios").doc(id).update(payload);
-    } else {
-      db.collection("itinerarios").add(payload);
-    }
-    
-    // ✅ ESTO HARÁ QUE SE CIERRE LA VENTANA AL INSTANTE
-    toast("Evento guardado", "success");
-    closeSheet(); 
-  } catch (err) {
-    console.error(err);
-    showFormError("No se pudo guardar el evento. Revisa tu conexión.");
-  } finally {
-    btn.disabled = false;
-  }
-}
-
-async function handleDeleteEvent() {
-  const id = el.inputEventId.value;
-  if (!id) return;
-  if (!confirm("¿Eliminar este evento del itinerario?")) return;
-
-  try {
-    await db.collection("itinerarios").doc(id).delete();
-    toast("Evento eliminado", "success");
-    closeSheet();
-  } catch (err) {
-    console.error(err);
-    showFormError("No se pudo eliminar.");
-  }
-}
-
-function showFormError(msg) {
-  el.formError.textContent = msg;
-  el.formError.classList.remove("hidden");
-}
-
-/* --------------------------------------------------------------------------
- * 9. CONNECTIVITY
- * ------------------------------------------------------------------------ */
-function updateConnectivityUI() {
-  const online = navigator.onLine;
-  el.offlineBanner.classList.toggle("hidden", online);
-  if (!online) {
-    el.livePill.classList.add("offline");
-    el.livePill.innerHTML = '<span class="live-dot"></span> Sin conexión';
-  }
-}
-
-window.addEventListener("online", () => {
-  updateConnectivityUI();
-  if (currentTripCode) {
-    subscribeRealtime();
-  }
-  toast("Conexión restaurada", "success");
-});
-
-window.addEventListener("offline", () => {
-  updateConnectivityUI();
-  toast("Sin conexión — mostrando datos guardados", "info");
-});
-
-/* --------------------------------------------------------------------------
- * 10. INIT
- * ------------------------------------------------------------------------ */
-function attachEventListeners() {
-  el.formLogin.addEventListener("submit", handleLoginSubmit);
-  el.btnAddEvent.addEventListener("click", openSheetForCreate);
-  el.btnLeave.addEventListener("click", leaveTrip);
-  el.btnCloseSheet.addEventListener("click", closeSheet);
-  el.sheetBackdrop.addEventListener("click", closeSheet);
-  el.formEvent.addEventListener("submit", handleEventFormSubmit);
-  el.btnDeleteEvent.addEventListener("click", handleDeleteEvent);
-}
-
-function init() {
-  attachEventListeners();
-  updateConnectivityUI();
-
-  if ("serviceWorker" in navigator) {
-    try {
-      navigator.serviceWorker.register("sw.js");
-    } catch (err) {
-      console.warn("SW registration failed:", err);
-    }
-  }
-
-  const savedTripCode = localStorage.getItem(LS_KEYS.tripCode);
-  const savedUserName = localStorage.getItem(LS_KEYS.userName);
-
-  setTimeout(() => {
-    if (savedTripCode && savedUserName) {
-      joinTrip(savedTripCode, savedUserName);
-    } else {
-      showScreen("login");
-    }
-  }, 500); 
-}
-
-document.addEventListener("DOMContentLoaded", init);
+  // 2. Mandamos a Firebase en segundo plano usando Promesas (.then/.catch)
+  if (id) {
+    db.collection("itinerarios").doc(id).update(payload)
+      .then(() => toast("Evento actualizado", "success"))
+      .catch(err => {
+        console.error(err);
+        toast("Error al actualizar", "error");
+      });
+  } else {
+    db.collection("itinerarios").add(payload)
+      .then(() =>
