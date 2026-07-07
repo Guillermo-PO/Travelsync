@@ -2,7 +2,7 @@
    TripSync — Service Worker
    ========================================================================== */
 
-const CACHE_NAME = "tripsync-cache-v15";
+const CACHE_NAME = "tripsync-cache-v16";
 const OFFLINE_URL = "offline.html";
 
 const APP_SHELL = [
