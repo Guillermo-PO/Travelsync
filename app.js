@@ -28,6 +28,7 @@ let currentUserName = null;
 let events = [];
 let unsubscribe = null; 
 let openNotesId = null; 
+let activeDate = null; // Guardará el día que estamos viendo
 
 const LS_KEYS = {
   tripCode: "tripsync_trip_code",
@@ -47,6 +48,7 @@ const el = {
   offlineBanner: document.getElementById("offline-banner"),
   livePill: document.getElementById("live-pill"),
   labelTripCode: document.getElementById("label-trip-code"),
+   dayTabs: document.getElementById("day-tabs"),
 
   formLogin: document.getElementById("form-login"),
   inputTripCode: document.getElementById("input-trip-code"),
@@ -225,11 +227,15 @@ function loadCachedEvents() {
 /* --------------------------------------------------------------------------
  * 7. RENDER
  * ------------------------------------------------------------------------ */
+/* --------------------------------------------------------------------------
+ * 7. RENDER
+ * ------------------------------------------------------------------------ */
 function renderItinerary() {
   const container = el.timelineContainer;
   container.innerHTML = "";
 
   if (!events.length) {
+    el.dayTabs.classList.add("hidden");
     container.innerHTML = `
       <div class="empty-state">
         <svg viewBox="0 0 24 24"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zM8 2v4M16 2v4M2 10h20"/></svg>
@@ -239,75 +245,65 @@ function renderItinerary() {
     return;
   }
 
-  const groups = [];
-  const byDate = new Map();
-  for (const ev of events) {
-    if (!byDate.has(ev.fecha)) {
-      const arr = [];
-      byDate.set(ev.fecha, arr);
-      groups.push({ fecha: ev.fecha, items: arr });
-    }
-    byDate.get(ev.fecha).push(ev);
-  }
-  groups.sort((a, b) => a.fecha.localeCompare(b.fecha));
+  // 1. Obtener los días únicos del viaje y ordenarlos
+  const uniqueDates = [...new Set(events.map(e => e.fecha))].sort();
 
-  groups.forEach((group, i) => {
-    const dayEl = document.createElement("div");
-    dayEl.className = "day-group";
-    dayEl.innerHTML = `
-      <div class="day-heading">
-        <span class="day-index">DÍA ${i + 1}</span>
-        <span class="day-date">${formatLongDate(group.fecha)}</span>
-      </div>
-      <div class="day-route">
-        ${group.items.map(renderEventCard).join("")}
-      </div>
-    `;
-    container.appendChild(dayEl);
-  });
+  // 2. Lógica inteligente para seleccionar el día activo
+  if (!activeDate || !uniqueDates.includes(activeDate)) {
+    const today = new Date().toISOString().slice(0, 10);
+    // Si "hoy" está en el itinerario, ábrelo. Si no, abre el Día 1.
+    if (uniqueDates.includes(today)) {
+      activeDate = today;
+    } else {
+      activeDate = uniqueDates[0];
+    }
+  }
+
+  // 3. Renderizar las pestañas horizontales
+  renderDayTabs(uniqueDates);
+
+  // 4. Filtrar los eventos para mostrar SOLO los del día seleccionado
+  const dayEvents = events.filter(e => e.fecha === activeDate);
+  const dayIndex = uniqueDates.indexOf(activeDate) + 1;
+
+  const dayEl = document.createElement("div");
+  dayEl.className = "day-group";
+  dayEl.innerHTML = `
+    <div class="day-heading">
+      <span class="day-index">DÍA ${dayIndex}</span>
+      <span class="day-date">${formatLongDate(activeDate)}</span>
+    </div>
+    <div class="day-route">
+      ${dayEvents.map(renderEventCard).join("")}
+    </div>
+  `;
+  container.appendChild(dayEl);
 
   attachCardListeners();
 }
 
-function renderEventCard(ev) {
-  const hasNotes = !!(ev.notas && ev.notas.trim());
-  const isOpen = openNotesId === ev.id;
-  return `
-    <article class="event-card" data-id="${ev.id}">
-      <div class="event-main" data-role="edit-trigger">
-        <span class="event-time">${formatTime(ev.hora)}</span>
-        <div class="event-body">
-          <h3 class="event-title">${escapeHtml(ev.titulo)}</h3>
-          ${ev.ubicacion ? `<p class="event-location">${locationIconSvg()} ${escapeHtml(ev.ubicacion)}</p>` : ""}
-          ${ev.creado_por ? `<p class="event-author">Agregado por ${escapeHtml(ev.creado_por)}</p>` : ""}
-        </div>
-        <div class="event-meta">
-          ${hasNotes ? `<button class="event-expand-btn ${isOpen ? "open" : ""}" data-role="toggle-notes" aria-label="Ver notas">${chevronSvg()}</button>` : ""}
-        </div>
-      </div>
-      ${hasNotes ? `
-      <div class="event-notes ${isOpen ? "open" : ""}" data-role="notes-panel">
-        <div class="event-notes-inner">${escapeHtml(ev.notas)}</div>
-      </div>` : ""}
-    </article>
-  `;
+function renderDayTabs(dates) {
+  el.dayTabs.classList.remove("hidden");
+  
+  el.dayTabs.innerHTML = dates.map((d, i) => `
+    <button class="day-tab ${d === activeDate ? 'active' : ''}" onclick="setActiveDate('${d}')">
+      Día ${i + 1}
+    </button>
+  `).join('');
+
+  // Scrollear automáticamente la barra de pestañas para centrar el día activo
+  setTimeout(() => {
+    const activeTab = el.dayTabs.querySelector('.active');
+    if (activeTab) {
+      activeTab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+  }, 50);
 }
 
-function attachCardListeners() {
-  el.timelineContainer.querySelectorAll(".event-card").forEach((card) => {
-    const id = card.dataset.id;
-    const editTrigger = card.querySelector('[data-role="edit-trigger"]');
-    editTrigger?.addEventListener("click", (e) => {
-      if (e.target.closest('[data-role="toggle-notes"]')) return;
-      openSheetForEdit(id);
-    });
-    const toggleBtn = card.querySelector('[data-role="toggle-notes"]');
-    toggleBtn?.addEventListener("click", (e) => {
-      e.stopPropagation();
-      openNotesId = openNotesId === id ? null : id;
-      renderItinerary();
-    });
-  });
+// Para hacerla global y que el onclick del HTML la encuentre
+window.setActiveDate = function(date) {
+  activeDate = date;
+  renderItinerary();
 }
 
 /* --------------------------------------------------------------------------
