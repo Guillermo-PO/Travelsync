@@ -263,7 +263,7 @@ function renderItinerary() {
           <svg viewBox="0 0 24 24" style="width: 54px; height: 54px; margin: 0 auto 16px; color: var(--accent-gold);"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
           <h3 style="font-family: var(--font-display); font-size: 1.3rem; color: var(--ink); margin-bottom: 8px;">El lienzo está en blanco</h3>
           <p style="font-size: 0.95rem; color: var(--muted); line-height: 1.5; margin-bottom: 24px;">
-            ¿Un takoyaki en Dotonbori? ¿Visita a los ciervos en Nara o el cruce de Shibuya en Tokio? Comienza a trazar la ruta de la aventura.
+            Un viaje siempre es mejor bien organizado. Comienza a trazar la ruta de la aventura.
           </p>
           <button class="btn btn-primary" onclick="openSheetForCreate()" style="padding: 12px 24px; font-size: 0.95rem; width: 100%;">
             + Agregar el primer plan
