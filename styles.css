@@ -689,12 +689,14 @@ svg { width: 22px; height: 22px; fill: currentColor; display: block; }
    ========================================================================== */
 .day-tabs {
   display: flex;
+  flex: 0 0 auto; /* 🚀 Evita que el contenedor crezca a lo alto */
+  align-items: center; /* 🚀 Evita que los botones se estiren como pilares */
   overflow-x: auto;
   gap: 10px;
   padding: 12px 20px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
-  scrollbar-width: none; /* Oculta scroll en Firefox */
+  scrollbar-width: none;
   scroll-behavior: smooth;
 }
 .day-tabs::-webkit-scrollbar { 
