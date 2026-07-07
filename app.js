@@ -169,6 +169,9 @@ function enterTimelineScreen() {
 }
 
 function leaveTrip() {
+  // 🚀 UX FIX: Confirmación antes de salir por si lo tocas por accidente
+  if (!confirm("¿Seguro que quieres salir de este itinerario?")) return;
+
   if (unsubscribe) {
     unsubscribe();
     unsubscribe = null;
@@ -182,7 +185,6 @@ function leaveTrip() {
   el.inputUserName.value = "";
   showScreen("login");
 }
-
 /* --------------------------------------------------------------------------
  * 6. DATA — Realtime con Firebase
  * ------------------------------------------------------------------------ */
@@ -533,5 +535,29 @@ function init() {
     }
   }, 500); 
 }
+
+/* ==========================================================================
+ * 11. IOS PWA FIXES (Anti-congelamiento y Clics Fantasmas)
+ * ========================================================================== */
+let lastTouchEnd = 0;
+document.addEventListener('touchend', function (event) {
+  const now = (new Date()).getTime();
+  // Si ocurren 2 toques con menos de 300ms de diferencia...
+  if (now - lastTouchEnd <= 300) {
+    const tag = event.target.tagName;
+    // ...y NO estás tocando una caja de texto, destruye el doble tap.
+    if (tag !== 'INPUT' && tag !== 'TEXTAREA') {
+      event.preventDefault(); 
+    }
+  }
+  lastTouchEnd = now;
+}, { passive: false });
+
+// Prevenir el zoom con dos dedos (pellizco)
+document.addEventListener('touchstart', function(event) {
+  if (event.touches.length > 1) {
+    event.preventDefault();
+  }
+}, { passive: false });
 
 document.addEventListener("DOMContentLoaded", init);
