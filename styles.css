@@ -71,13 +71,26 @@
    Reset & base
    ========================================================================== */
 
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+* { 
+  box-sizing: border-box; 
+  -webkit-tap-highlight-color: transparent; 
+  touch-action: manipulation !important; 
+}
 
-html, body {
+html, body, .screen, .timeline-container, .day-tabs, .event-card, .sheet-backdrop {
   height: 100%;
   overscroll-behavior-y: none;
-  /* 🚀 ESTA LÍNEA ELIMINA EL CONGELAMIENTO POR DOBLE TAP EN IOS */
-  touch-action: manipulation; 
+  touch-action: manipulation !important;
+  
+  /* 🚀 ELIMINA EL CONGELAMIENTO: Bloquea la selección de texto en el fondo */
+  -webkit-user-select: none; 
+  user-select: none;
+}
+
+/* Permitir selección de texto EXCLUSIVAMENTE en campos de escritura y notas */
+input, textarea, .event-notes-inner, .input-code {
+  -webkit-user-select: auto !important;
+  user-select: auto !important;
 }
 
 body {
@@ -100,7 +113,6 @@ button { cursor: pointer; }
 .hidden { display: none !important; }
 
 svg { width: 22px; height: 22px; fill: currentColor; display: block; }
-
 /* ==========================================================================
    Screens
    ========================================================================== */
