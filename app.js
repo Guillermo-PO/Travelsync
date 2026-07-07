@@ -142,6 +142,8 @@ function linkify(text) {
   });
 }
 
+function editIconSvg() { return '<svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 0 0 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>'; }
+
 /* --------------------------------------------------------------------------
  * 5. LOGIN FLOW
  * ------------------------------------------------------------------------ */
@@ -339,19 +341,20 @@ function renderEventCard(ev) {
   const isOpen = openNotesId === ev.id;
   return `
     <article class="event-card" data-id="${ev.id}">
-      <div class="event-main" data-role="edit-trigger">
+      <div class="event-main" ${hasNotes ? 'data-role="toggle-notes" style="cursor: pointer;"' : ''}>
         <span class="event-time">${formatTime(ev.hora)}</span>
         <div class="event-body">
           <h3 class="event-title">${escapeHtml(ev.titulo)}</h3>
           ${ev.ubicacion ? `<p class="event-location">${locationIconSvg()} ${escapeHtml(ev.ubicacion)}</p>` : ""}
           ${ev.creado_por ? `<p class="event-author">Agregado por ${escapeHtml(ev.creado_por)}</p>` : ""}
+          ${hasNotes && !isOpen ? `<p class="event-author" style="color: var(--accent-teal); margin-top: 4px; font-weight: 500;">Toca para ver detalles...</p>` : ""}
         </div>
         <div class="event-meta">
-          ${hasNotes ? `<button class="event-expand-btn ${isOpen ? "open" : ""}" data-role="toggle-notes" aria-label="Ver notas">${chevronSvg()}</button>` : ""}
+          <button class="event-edit-btn" data-role="edit-trigger" aria-label="Editar evento">${editIconSvg()}</button>
         </div>
       </div>
       ${hasNotes ? `
-      <div class="event-notes ${isOpen ? "open" : ""}" data-role="notes-panel">
+      <div class="event-notes ${isOpen ? "open" : ""}">
         <div class="event-notes-inner">${linkify(ev.notas)}</div>
       </div>` : ""}
     </article>
@@ -361,14 +364,19 @@ function renderEventCard(ev) {
 function attachCardListeners() {
   el.timelineContainer.querySelectorAll(".event-card").forEach((card) => {
     const id = card.dataset.id;
+    
+    // 1. Escuchar el clic en el botón de editar (El lápiz)
     const editTrigger = card.querySelector('[data-role="edit-trigger"]');
     editTrigger?.addEventListener("click", (e) => {
-      if (e.target.closest('[data-role="toggle-notes"]')) return;
+      e.stopPropagation(); // Evita que el clic abra/cierre las notas
       openSheetForEdit(id);
     });
+
+    // 2. Escuchar el clic en toda la tarjeta (para abrir notas)
     const toggleBtn = card.querySelector('[data-role="toggle-notes"]');
     toggleBtn?.addEventListener("click", (e) => {
-      e.stopPropagation();
+      // Si tocaron accidentalmente cerca del botón de editar, no hacemos nada
+      if (e.target.closest('[data-role="edit-trigger"]')) return;
       openNotesId = openNotesId === id ? null : id;
       renderItinerary();
     });
