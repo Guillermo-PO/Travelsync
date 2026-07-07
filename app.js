@@ -4,12 +4,14 @@
 
 /* 1. PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE */
 const firebaseConfig = {
-  apiKey: "TU_API_KEY",
-  authDomain: "tu-proyecto.firebaseapp.com",
-  projectId: "tu-proyecto",
-  storageBucket: "tu-proyecto.appspot.com",
-  messagingSenderId: "TUS_NUMEROS",
-  appId: "TU_APP_ID"
+  apiKey: "AIzaSyAyI0hZ3Kt4wpW_e3_uJ6tWmrE_8aOj_Zc",
+  authDomain: "tripsync-58ded.firebaseapp.com",
+  databaseURL: "https://tripsync-58ded-default-rtdb.firebaseio.com",
+  projectId: "tripsync-58ded",
+  storageBucket: "tripsync-58ded.firebasestorage.app",
+  messagingSenderId: "854250106343",
+  appId: "1:854250106343:web:8f8249f22bccd21dffe142",
+  measurementId: "G-NJMT0T765X"
 };
 
 // Inicializar Firebase
@@ -382,10 +384,8 @@ function handleEventFormSubmit(e) {
     created_at: firebase.firestore.FieldValue.serverTimestamp()
   };
 
-  // 1. Cerramos el panel inmediatamente para una UI súper rápida
   closeSheet();
 
-  // 2. Mandamos a Firebase en segundo plano usando Promesas (.then/.catch)
   if (id) {
     db.collection("itinerarios").doc(id).update(payload)
       .then(() => toast("Evento actualizado", "success"))
@@ -395,4 +395,94 @@ function handleEventFormSubmit(e) {
       });
   } else {
     db.collection("itinerarios").add(payload)
-      .then(() =>
+      .then(() => toast("Evento guardado", "success"))
+      .catch(err => {
+        console.error(err);
+        toast("Error al guardar", "error");
+      });
+  }
+}
+
+function handleDeleteEvent() {
+  const id = el.inputEventId.value;
+  if (!id) return;
+  if (!confirm("¿Eliminar este evento del itinerario?")) return;
+
+  closeSheet(); 
+
+  db.collection("itinerarios").doc(id).delete()
+    .then(() => toast("Evento eliminado", "success"))
+    .catch(err => {
+      console.error(err);
+      toast("Error al eliminar", "error");
+    });
+}
+
+function showFormError(msg) {
+  el.formError.textContent = msg;
+  el.formError.classList.remove("hidden");
+}
+
+/* --------------------------------------------------------------------------
+ * 9. CONNECTIVITY
+ * ------------------------------------------------------------------------ */
+function updateConnectivityUI() {
+  const online = navigator.onLine;
+  el.offlineBanner.classList.toggle("hidden", online);
+  if (!online) {
+    el.livePill.classList.add("offline");
+    el.livePill.innerHTML = '<span class="live-dot"></span> Sin conexión';
+  }
+}
+
+window.addEventListener("online", () => {
+  updateConnectivityUI();
+  if (currentTripCode) {
+    subscribeRealtime();
+  }
+  toast("Conexión restaurada", "success");
+});
+
+window.addEventListener("offline", () => {
+  updateConnectivityUI();
+  toast("Sin conexión — mostrando datos guardados", "info");
+});
+
+/* --------------------------------------------------------------------------
+ * 10. INIT
+ * ------------------------------------------------------------------------ */
+function attachEventListeners() {
+  el.formLogin.addEventListener("submit", handleLoginSubmit);
+  el.btnAddEvent.addEventListener("click", openSheetForCreate);
+  el.btnLeave.addEventListener("click", leaveTrip);
+  el.btnCloseSheet.addEventListener("click", closeSheet);
+  el.sheetBackdrop.addEventListener("click", closeSheet);
+  el.formEvent.addEventListener("submit", handleEventFormSubmit);
+  el.btnDeleteEvent.addEventListener("click", handleDeleteEvent);
+}
+
+function init() {
+  attachEventListeners();
+  updateConnectivityUI();
+
+  if ("serviceWorker" in navigator) {
+    try {
+      navigator.serviceWorker.register("sw.js");
+    } catch (err) {
+      console.warn("SW registration failed:", err);
+    }
+  }
+
+  const savedTripCode = localStorage.getItem(LS_KEYS.tripCode);
+  const savedUserName = localStorage.getItem(LS_KEYS.userName);
+
+  setTimeout(() => {
+    if (savedTripCode && savedUserName) {
+      joinTrip(savedTripCode, savedUserName);
+    } else {
+      showScreen("login");
+    }
+  }, 500); 
+}
+
+document.addEventListener("DOMContentLoaded", init);
