@@ -20,9 +20,10 @@ if (!firebase.apps.length) {
 }
 const db = firebase.firestore();
 
-// 🚀 ENCENDER PERSISTENCIA OFFLINE DE FIREBASE
-db.enablePersistence().catch(function(err) {
-  console.warn("No se pudo activar la persistencia offline de Firebase:", err);
+// 🚀 SOLUCIÓN AL PRIMER INICIO: Persistencia Multi-Pestaña Nativa
+// Permite compartir la base de datos si la app está abierta en Safari y como PWA a la vez
+db.enableMultiTabIndexedDbPersistence().catch(function(err) {
+  console.warn("Multi-tab persistence state:", err.code);
 });
 
 /* --------------------------------------------------------------------------
