@@ -76,6 +76,8 @@
 html, body {
   height: 100%;
   overscroll-behavior-y: none;
+  /* 🚀 ESTA LÍNEA ELIMINA EL CONGELAMIENTO POR DOBLE TAP EN IOS */
+  touch-action: manipulation; 
 }
 
 body {
@@ -705,6 +707,11 @@ svg { width: 22px; height: 22px; fill: currentColor; display: block; }
   color: #fff;
   border-color: var(--accent-teal);
   box-shadow: 0 2px 8px var(--accent-teal-soft);
+}
+
+/* Corrección global para gestos en iOS PWA */
+button, input, textarea, .day-tab, .event-card, .sheet {
+  touch-action: manipulation;
 }
 /* ==========================================================================
    Accessibility & small niceties
