@@ -227,9 +227,6 @@ function loadCachedEvents() {
 /* --------------------------------------------------------------------------
  * 7. RENDER
  * ------------------------------------------------------------------------ */
-/* --------------------------------------------------------------------------
- * 7. RENDER
- * ------------------------------------------------------------------------ */
 function renderItinerary() {
   const container = el.timelineContainer;
   container.innerHTML = "";
@@ -237,21 +234,25 @@ function renderItinerary() {
   if (!events.length) {
     el.dayTabs.classList.add("hidden");
     container.innerHTML = `
-      <div class="empty-state">
-        <svg viewBox="0 0 24 24"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zM8 2v4M16 2v4M2 10h20"/></svg>
-        <h3>Aún no hay planes</h3>
-        <p>Toca "Agregar" para crear el primer evento del viaje.</p>
+      <div class="empty-state" style="margin-top: 40px; padding: 0 10px;">
+        <div style="background: var(--surface); padding: 32px 20px; border-radius: var(--radius-md); border: 1px dashed var(--border-strong); box-shadow: var(--shadow-sm);">
+          <svg viewBox="0 0 24 24" style="width: 54px; height: 54px; margin: 0 auto 16px; color: var(--accent-gold);"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
+          <h3 style="font-family: var(--font-display); font-size: 1.3rem; color: var(--ink); margin-bottom: 8px;">El lienzo está en blanco</h3>
+          <p style="font-size: 0.95rem; color: var(--muted); line-height: 1.5; margin-bottom: 24px;">
+            ¿Un takoyaki en Dotonbori? ¿Visita a los ciervos en Nara o el cruce de Shibuya en Tokio? Comienza a trazar la ruta de la aventura.
+          </p>
+          <button class="btn btn-primary" onclick="openSheetForCreate()" style="padding: 12px 24px; font-size: 0.95rem; width: 100%;">
+            + Agregar el primer plan
+          </button>
+        </div>
       </div>`;
     return;
   }
 
-  // 1. Obtener los días únicos del viaje y ordenarlos
   const uniqueDates = [...new Set(events.map(e => e.fecha))].sort();
 
-  // 2. Lógica inteligente para seleccionar el día activo
   if (!activeDate || !uniqueDates.includes(activeDate)) {
     const today = new Date().toISOString().slice(0, 10);
-    // Si "hoy" está en el itinerario, ábrelo. Si no, abre el Día 1.
     if (uniqueDates.includes(today)) {
       activeDate = today;
     } else {
@@ -259,10 +260,8 @@ function renderItinerary() {
     }
   }
 
-  // 3. Renderizar las pestañas horizontales
   renderDayTabs(uniqueDates);
 
-  // 4. Filtrar los eventos para mostrar SOLO los del día seleccionado
   const dayEvents = events.filter(e => e.fecha === activeDate);
   const dayIndex = uniqueDates.indexOf(activeDate) + 1;
 
@@ -291,21 +290,66 @@ function renderDayTabs(dates) {
     </button>
   `).join('');
 
-  // Scrollear automáticamente la barra de pestañas para centrar el día activo
+  // Scroll matemático seguro para móviles (Evita que la pantalla se congele)
   setTimeout(() => {
     const activeTab = el.dayTabs.querySelector('.active');
     if (activeTab) {
-      activeTab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      const tabCenter = activeTab.offsetLeft + (activeTab.clientWidth / 2);
+      const containerCenter = el.dayTabs.clientWidth / 2;
+      el.dayTabs.scrollTo({
+        left: tabCenter - containerCenter,
+        behavior: 'smooth'
+      });
     }
   }, 50);
 }
 
-// Para hacerla global y que el onclick del HTML la encuentre
+// Hace la función global para los botones
 window.setActiveDate = function(date) {
   activeDate = date;
   renderItinerary();
 }
 
+function renderEventCard(ev) {
+  const hasNotes = !!(ev.notas && ev.notas.trim());
+  const isOpen = openNotesId === ev.id;
+  return `
+    <article class="event-card" data-id="${ev.id}">
+      <div class="event-main" data-role="edit-trigger">
+        <span class="event-time">${formatTime(ev.hora)}</span>
+        <div class="event-body">
+          <h3 class="event-title">${escapeHtml(ev.titulo)}</h3>
+          ${ev.ubicacion ? `<p class="event-location">${locationIconSvg()} ${escapeHtml(ev.ubicacion)}</p>` : ""}
+          ${ev.creado_por ? `<p class="event-author">Agregado por ${escapeHtml(ev.creado_por)}</p>` : ""}
+        </div>
+        <div class="event-meta">
+          ${hasNotes ? `<button class="event-expand-btn ${isOpen ? "open" : ""}" data-role="toggle-notes" aria-label="Ver notas">${chevronSvg()}</button>` : ""}
+        </div>
+      </div>
+      ${hasNotes ? `
+      <div class="event-notes ${isOpen ? "open" : ""}" data-role="notes-panel">
+        <div class="event-notes-inner">${escapeHtml(ev.notas)}</div>
+      </div>` : ""}
+    </article>
+  `;
+}
+
+function attachCardListeners() {
+  el.timelineContainer.querySelectorAll(".event-card").forEach((card) => {
+    const id = card.dataset.id;
+    const editTrigger = card.querySelector('[data-role="edit-trigger"]');
+    editTrigger?.addEventListener("click", (e) => {
+      if (e.target.closest('[data-role="toggle-notes"]')) return;
+      openSheetForEdit(id);
+    });
+    const toggleBtn = card.querySelector('[data-role="toggle-notes"]');
+    toggleBtn?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openNotesId = openNotesId === id ? null : id;
+      renderItinerary();
+    });
+  });
+}
 /* --------------------------------------------------------------------------
  * 8. BOTTOM SHEET
  * ------------------------------------------------------------------------ */
