@@ -20,6 +20,11 @@ if (!firebase.apps.length) {
 }
 const db = firebase.firestore();
 
+// 🚀 ENCENDER PERSISTENCIA OFFLINE DE FIREBASE
+db.enablePersistence().catch(function(err) {
+  console.warn("No se pudo activar la persistencia offline de Firebase:", err);
+});
+
 /* --------------------------------------------------------------------------
  * 2. STATE & VARIABLES
  * ------------------------------------------------------------------------ */
