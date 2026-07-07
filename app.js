@@ -191,7 +191,6 @@ function subscribeRealtime() {
         events.push({ id: doc.id, ...doc.data() });
       });
       
-      // Ordenamiento manual para evitar errores de Índices en Firebase
       events.sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora));
       
       cacheEvents();
