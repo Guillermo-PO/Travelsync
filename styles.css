@@ -491,6 +491,18 @@ svg { width: 22px; height: 22px; fill: currentColor; display: block; }
 .event-expand-btn svg { width: 18px; height: 18px; }
 .event-expand-btn.open { transform: rotate(180deg); background: var(--border); }
 
+.event-edit-btn {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.event-edit-btn:active { background: var(--border); color: var(--accent-teal); }
+.event-edit-btn svg { width: 18px; height: 18px; }
+
 .event-notes {
   max-height: 0;
   overflow: hidden;
