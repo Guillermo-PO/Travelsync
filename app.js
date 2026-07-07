@@ -351,8 +351,8 @@ function renderEventCard(ev) {
         </div>
       </div>
       ${hasNotes ? `
-      <div class="event-notes-inner">${linkify(ev.notas)}</div>
-        <div class="event-notes-inner">${escapeHtml(ev.notas)}</div>
+      <div class="event-notes ${isOpen ? "open" : ""}" data-role="notes-panel">
+        <div class="event-notes-inner">${linkify(ev.notas)}</div>
       </div>` : ""}
     </article>
   `;
