@@ -110,6 +110,11 @@ const WEEKDAYS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes
 const MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 
 function formatLongDate(dateStr) {
+  // 🚀 EVITA EL CRASHEO: Si la fecha viene vacía o corrupta desde Firebase, pon un comodín seguro.
+  if (!dateStr || typeof dateStr !== "string" || !dateStr.includes("-")) {
+    return "Día Especial";
+  }
+  
   const [y, m, d] = dateStr.split("-").map(Number);
   const dt = new Date(y, m - 1, d);
   return `${WEEKDAYS[dt.getDay()]} ${d} de ${MONTHS[m - 1]}`;
