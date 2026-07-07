@@ -182,16 +182,17 @@ function subscribeRealtime() {
   pill.classList.remove("offline");
   pill.innerHTML = '<span class="live-dot"></span> Sincronizando...';
 
-  // Escuchar en tiempo real a la colección de Firestore
+  // Escuchar en tiempo real a la colección (SIN los orderBy para evitar el error de Índice de Firebase)
   unsubscribe = db.collection("itinerarios")
     .where("codigo_viaje", "==", currentTripCode)
-    .orderBy("fecha", "asc")
-    .orderBy("hora", "asc")
     .onSnapshot((querySnapshot) => {
       events = [];
       querySnapshot.forEach((doc) => {
         events.push({ id: doc.id, ...doc.data() });
       });
+      
+      // ✅ ORDENAMOS LOS EVENTOS MANUALMENTE AQUÍ EN LUGAR DE PEDÍRSELO A LA BASE DE DATOS
+      events.sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora));
       
       cacheEvents();
       renderItinerary();
@@ -380,20 +381,23 @@ async function handleEventFormSubmit(e) {
     ubicacion: ubicacion || null,
     notas: notas || null,
     creado_por: currentUserName,
-    created_at: firebase.firestore.FieldValue.serverTimestamp() // Timestamp de Firebase
+    created_at: firebase.firestore.FieldValue.serverTimestamp()
   };
 
   const btn = document.getElementById("btn-save-event");
   btn.disabled = true;
 
   try {
+    // ✅ QUITAMOS EL "await" PARA APROVECHAR LA VELOCIDAD DE FIREBASE
     if (id) {
-      await db.collection("itinerarios").doc(id).update(payload);
+      db.collection("itinerarios").doc(id).update(payload);
     } else {
-      await db.collection("itinerarios").add(payload);
+      db.collection("itinerarios").add(payload);
     }
+    
+    // ✅ ESTO HARÁ QUE SE CIERRE LA VENTANA AL INSTANTE
     toast("Evento guardado", "success");
-    closeSheet();
+    closeSheet(); 
   } catch (err) {
     console.error(err);
     showFormError("No se pudo guardar el evento. Revisa tu conexión.");
