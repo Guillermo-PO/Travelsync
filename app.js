@@ -130,6 +130,18 @@ function formatTime(timeStr) {
 function locationIconSvg() { return '<svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>'; }
 function chevronSvg() { return '<svg viewBox="0 0 24 24"><path d="M12 15.5l-6-6 1.41-1.41L12 12.67l4.59-4.58L18 9.5z"/></svg>'; }
 
+function linkify(text) {
+  if (!text) return "";
+  // 1. Escapamos el HTML primero por seguridad (para que no inyecten código malicioso)
+  const safeText = escapeHtml(text);
+  // 2. Buscamos cualquier texto que empiece con http:// o https://
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  // 3. Lo reemplazamos por un enlace real con diseño
+  return safeText.replace(urlRegex, (url) => {
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color: var(--accent-teal); text-decoration: underline; word-break: break-all;">${url}</a>`;
+  });
+}
+
 /* --------------------------------------------------------------------------
  * 5. LOGIN FLOW
  * ------------------------------------------------------------------------ */
@@ -339,7 +351,7 @@ function renderEventCard(ev) {
         </div>
       </div>
       ${hasNotes ? `
-      <div class="event-notes ${isOpen ? "open" : ""}" data-role="notes-panel">
+      <div class="event-notes-inner">${linkify(ev.notas)}</div>
         <div class="event-notes-inner">${escapeHtml(ev.notas)}</div>
       </div>` : ""}
     </article>
