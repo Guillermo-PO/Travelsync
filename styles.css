@@ -862,9 +862,13 @@ button, input, textarea, .day-tab, .event-card, .sheet {
   display: flex;
   background: var(--surface);
   border-top: 1px solid var(--border);
-  /* 🚀 Dejamos solo el espacio milimétrico para la barra de iOS abajo */
-  padding: 8px 12px var(--safe-bottom);
-  box-shadow: 0 -2px 12px rgba(22, 38, 59, 0.06);
+
+  /* 🚀 LA MAGIA ESTÁ AQUÍ: 
+     Reducimos drásticamente el espacio muerto a la mitad usando matemáticas.
+     Si el celular no tiene barra blanca, usa 12px por defecto. */
+  padding: 10px 12px max(12px, calc(env(safe-area-inset-bottom) * 0.45));
+  
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.15);
 }
 
 .tabbar-btn {
