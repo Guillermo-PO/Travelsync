@@ -863,10 +863,9 @@ button, input, textarea, .day-tab, .event-card, .sheet {
   background: var(--surface);
   border-top: 1px solid var(--border);
 
-  /* 🚀 LA MAGIA ESTÁ AQUÍ: 
-     Reducimos drásticamente el espacio muerto a la mitad usando matemáticas.
-     Si el celular no tiene barra blanca, usa 12px por defecto. */
-  padding: 10px 12px max(12px, calc(env(safe-area-inset-bottom) * 0.45));
+  /* 🚀 LA SOLUCIÓN DEFINITIVA: Valores fijos, ignorando el cálculo de Apple */
+  padding: 8px 12px 24px 12px;
+  height: 80px; /* Forzamos a que no pueda crecer más de esto */
   
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.15);
 }
@@ -876,7 +875,7 @@ button, input, textarea, .day-tab, .event-card, .sheet {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start; /* Los anclamos arriba para que no floten */
   gap: 4px;
   background: none;
   border: none;
