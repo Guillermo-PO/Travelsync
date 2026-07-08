@@ -79,10 +79,10 @@
 
 /* 1. Solo estos contenedores maestros deben medir el 100% de la pantalla */
 html, body, .screen {
-  height: 100%;
+  height: 100%; /* Fallback para navegadores viejos */
+  height: 100dvh; /* 🚀 FIX DE APPLE: Obliga a llenar el 100% de la pantalla física real */
   overscroll-behavior-y: none;
 }
-
 /* 2. Protección global anti-congelamiento para iOS PWA */
 html, body, .screen, .timeline-container, .day-tabs, .event-card, .sheet-backdrop {
   touch-action: manipulation !important;
@@ -863,10 +863,8 @@ button, input, textarea, .day-tab, .event-card, .sheet {
   background: var(--surface);
   border-top: 1px solid var(--border);
 
-  /* 🚀 LA SOLUCIÓN DEFINITIVA: Valores fijos, ignorando el cálculo de Apple */
-  padding: 8px 12px 24px 12px;
-  height: 80px; /* Forzamos a que no pueda crecer más de esto */
-  
+  /* 🚀 Suma 8px de padding + el espacio de seguridad nativo del iPhone */
+  padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.15);
 }
 
@@ -875,7 +873,7 @@ button, input, textarea, .day-tab, .event-card, .sheet {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start; /* Los anclamos arriba para que no floten */
+  justify-content: center;
   gap: 4px;
   background: none;
   border: none;
