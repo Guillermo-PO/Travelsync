@@ -595,14 +595,21 @@ svg { width: 22px; height: 22px; fill: currentColor; display: block; }
   z-index: 51;
   background: var(--surface);
   border-radius: 22px 22px 0 0;
-  box-shadow: var(--shadow-lg);
   padding: 10px 20px calc(24px + var(--safe-bottom));
   max-height: 88vh;
   overflow-y: auto;
+  
+  /* 🚀 Modificación: Apagamos la sombra por defecto y agregamos box-shadow a la transición */
+  box-shadow: none;
   transform: translateY(100%);
-  transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.2s ease;
 }
-.sheet.open { transform: translateY(0); }
+
+.sheet.open { 
+  transform: translateY(0); 
+  /* 🚀 Modificación: La sombra solo se activa cuando el panel se abre */
+  box-shadow: var(--shadow-lg);
+}
 
 .sheet-handle {
   width: 40px; height: 4px;
@@ -742,6 +749,88 @@ svg { width: 22px; height: 22px; fill: currentColor; display: block; }
 button, input, textarea, .day-tab, .event-card, .sheet {
   touch-action: manipulation;
 }
+
+/* ==========================================================================
+   Hub de Viajeros Styles
+   ========================================================================== */
+.traveler-pill {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--ink);
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: var(--shadow-sm);
+}
+
+.traveler-dot {
+  width: 7px;
+  height: 7px;
+  background-color: #6CC5A1; /* Verde activo */
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* Hacer interactivo el título superior izquierdo */
+.topbar-left {
+  cursor: pointer;
+  padding: 4px 8px;
+  margin-left: -8px;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s ease;
+}
+.topbar-left:active {
+  background: var(--border);
+}
+
+/* ==========================================================================
+   Reglas Styles
+   ========================================================================== */
+.rule-item {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  color: var(--ink);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+.rule-text {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.rule-author {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 4px;
+  display: block;
+}
+
+.btn-delete-rule {
+  background: none;
+  border: none;
+  color: var(--danger);
+  padding: 4px;
+  border-radius: 4px;
+  opacity: 0.6;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+.btn-delete-rule:hover, .btn-delete-rule:active { 
+  opacity: 1; 
+  background: var(--danger-soft); 
+}
+.btn-delete-rule svg { width: 18px; height: 18px; }
+
 /* ==========================================================================
    Accessibility & small niceties
    ========================================================================== */
@@ -757,7 +846,354 @@ button, input, textarea, .day-tab, .event-card, .sheet {
 
 /* Slightly wider layouts (tablets) still feel intentional, capped for readability */
 @media (min-width: 560px) {
-  .timeline-container { max-width: 560px; margin: 0 auto; width: 100%; }
+  .timeline-container, .expenses-container { max-width: 560px; margin: 0 auto; width: 100%; }
   .sheet { max-width: 560px; margin: 0 auto; left: 0; right: 0; }
   .topbar > * { max-width: 560px; }
+}
+
+/* ==========================================================================
+   Bottom tab bar (Itinerario / Gastos)
+   ========================================================================== */
+
+.bottom-tabbar {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 30;
+  display: flex;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 6px 12px calc(6px + var(--safe-bottom));
+  box-shadow: 0 -2px 12px rgba(22, 38, 59, 0.06);
+}
+
+.tabbar-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  padding: 6px 4px 4px;
+  border-radius: var(--radius-sm);
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.tabbar-btn svg { width: 22px; height: 22px; }
+.tabbar-btn.active { color: var(--accent-teal); }
+.tabbar-btn:active { background: var(--accent-teal-soft); }
+
+/* Screens that show the tabbar need extra bottom clearance */
+#screen-timeline .timeline-container,
+#screen-expenses .expenses-container {
+  padding-bottom: calc(150px + var(--safe-bottom));
+}
+
+/* FAB sits above the tabbar on both screens that have it */
+.fab {
+  bottom: calc(84px + var(--safe-bottom));
+}
+
+/* ==========================================================================
+   Expenses screen — currency select, segmented tabs
+   ========================================================================== */
+
+.currency-select {
+  appearance: none;
+  background: var(--accent-teal-soft);
+  color: var(--accent-teal);
+  border: none;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+}
+
+.expense-segment { gap: 8px; }
+.expense-segment .day-tab { flex: 1; text-align: center; }
+
+.expenses-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 18px calc(120px + var(--safe-bottom));
+  -webkit-overflow-scrolling: touch;
+}
+
+.section-heading {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 24px 2px 12px;
+}
+
+/* --- Summary cards --- */
+.summary-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.summary-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.summary-card .summary-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 6px;
+}
+.summary-card .summary-value {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+.summary-card.positive .summary-value { color: #2E9C6E; }
+.summary-card.negative .summary-value { color: var(--danger); }
+.summary-card .summary-sub {
+  font-size: 0.74rem;
+  color: var(--muted);
+  margin: 4px 0 0;
+}
+
+/* --- Debts (simplified settlement) --- */
+.debts-container { display: flex; flex-direction: column; gap: 10px; }
+.debt-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  box-shadow: var(--shadow-sm);
+}
+.debt-flow {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  min-width: 0;
+}
+.debt-name { font-weight: 600; color: var(--ink); }
+.debt-arrow { color: var(--muted); flex-shrink: 0; width: 16px; height: 16px; }
+.debt-amount {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--accent-gold);
+  white-space: nowrap;
+}
+.btn-settle {
+  background: var(--accent-teal-soft);
+  color: var(--accent-teal);
+  border: none;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.debts-empty, .expenses-empty {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.88rem;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+}
+
+/* --- Per-person balances --- */
+.balances-container { display: flex; flex-direction: column; gap: 8px; }
+.balance-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+}
+.balance-row .balance-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+.balance-row .balance-amount {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.balance-amount.positive { color: #2E9C6E; }
+.balance-amount.negative { color: var(--danger); }
+.balance-amount.neutral { color: var(--muted); }
+
+/* --- Expense list --- */
+.expenses-list-container { display: flex; flex-direction: column; gap: 10px; }
+.expense-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 13px 14px;
+  box-shadow: var(--shadow-sm);
+}
+.expense-emoji {
+  font-size: 1.3rem;
+  width: 40px; height: 40px;
+  flex-shrink: 0;
+  background: var(--accent-teal-soft);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+.expense-body { flex: 1; min-width: 0; }
+.expense-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.98rem;
+  color: var(--ink);
+  margin: 0 0 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.expense-sub {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin: 0;
+}
+.expense-amount {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.96rem;
+  color: var(--ink);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Expense form — categories, split methods
+   ========================================================================== */
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.category-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.category-chip .emoji { font-size: 1.25rem; }
+.category-chip.active {
+  border-color: var(--accent-teal);
+  background: var(--accent-teal-soft);
+  color: var(--accent-teal);
+}
+
+.split-method-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.split-tab {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 8px 6px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+.split-tab.active {
+  background: var(--accent-teal);
+  color: #fff;
+  border-color: var(--accent-teal);
+}
+
+.participants-container { display: flex; flex-direction: column; gap: 8px; }
+.participant-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+}
+.participant-row input[type="checkbox"] {
+  width: 18px; height: 18px;
+  accent-color: var(--accent-teal);
+  flex-shrink: 0;
+}
+.participant-row .participant-name {
+  flex: 1;
+  font-size: 0.9rem;
+  color: var(--ink);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.participant-row .participant-value {
+  width: 84px;
+  flex-shrink: 0;
+  text-align: right;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 8px;
+  font-size: 0.86rem;
+  font-family: var(--font-mono);
+  background: var(--bg);
+  color: var(--ink);
+}
+.participant-row .participant-value:disabled {
+  opacity: 0.55;
+}
+.participant-row.disabled { opacity: 0.45; }
+
+.split-hint {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin: 8px 2px 0;
+}
+.split-hint.error { color: var(--danger); font-weight: 600; }
+.split-hint.ok { color: #2E9C6E; font-weight: 600; }
+
+.settle-description {
+  font-size: 0.92rem;
+  color: var(--ink-soft);
+  line-height: 1.5;
+  margin: 0 0 4px;
 }
