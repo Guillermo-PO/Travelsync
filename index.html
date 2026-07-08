@@ -91,6 +91,59 @@
     </button>
   </section>
 
+  <section id="screen-expenses" class="screen">
+    <header class="topbar">
+      <div class="topbar-left" id="expenses-topbar-left">
+        <p class="topbar-eyebrow" id="label-trip-code-expenses">—</p>
+        <h1 class="topbar-title">Gastos</h1>
+      </div>
+      <div class="topbar-right">
+        <select id="select-currency" class="currency-select" aria-label="Moneda del viaje">
+          <option value="MXN">MXN $</option>
+          <option value="USD">USD $</option>
+          <option value="EUR">EUR €</option>
+          <option value="COP">COP $</option>
+          <option value="ARS">ARS $</option>
+          <option value="GBP">GBP £</option>
+        </select>
+      </div>
+    </header>
+
+    <nav class="day-tabs expense-segment">
+      <button class="day-tab active" id="tab-balance" data-tab="balance">Balance</button>
+      <button class="day-tab" id="tab-list" data-tab="list">Todos los gastos</button>
+    </nav>
+
+    <main id="expenses-container" class="expenses-container">
+      <div id="expenses-balance-view">
+        <div class="summary-row" id="summary-row"></div>
+        <h3 class="section-heading">Quién le debe a quién</h3>
+        <div id="debts-container" class="debts-container"></div>
+        <h3 class="section-heading">Balance por persona</h3>
+        <div id="balances-container" class="balances-container"></div>
+      </div>
+      <div id="expenses-list-view" class="hidden">
+        <div id="expenses-list-container" class="expenses-list-container"></div>
+      </div>
+    </main>
+
+    <button class="fab" id="btn-add-expense" aria-label="Agregar gasto">
+      <svg viewBox="0 0 24 24"><path d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z"/></svg>
+      <span class="fab-label">Gasto</span>
+    </button>
+  </section>
+
+  <nav id="bottom-tabbar" class="bottom-tabbar hidden">
+    <button class="tabbar-btn active" id="tabbtn-itinerario" data-screen="timeline">
+      <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
+      <span>Itinerario</span>
+    </button>
+    <button class="tabbar-btn" id="tabbtn-gastos" data-screen="expenses">
+      <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+      <span>Gastos</span>
+    </button>
+  </nav>
+
   <div id="sheet-backdrop" class="sheet-backdrop hidden"></div>
   <section id="sheet-event" class="sheet" aria-hidden="true">
     <div class="sheet-handle"></div>
@@ -132,6 +185,141 @@
     </form>
   </section>
 
+  <div id="hub-backdrop" class="sheet-backdrop hidden"></div>
+  <div id="sheet-hub" class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <h2 id="hub-title">Detalles del Viaje</h2>
+      <button class="icon-btn" id="btn-close-hub" aria-label="Cerrar panel">✕</button>
+    </div>
+    
+    <div style="margin-bottom: 24px;">
+      <h3 class="field-label" style="font-size: 0.9rem; color: var(--accent-teal); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">
+        👥 Viajeros en la aventura
+      </h3>
+      <div id="travelers-container" style="display: flex; flex-wrap: wrap; gap: 8px;">
+        </div>
+    </div>
+
+    <div>
+      <h3 class="field-label" style="font-size: 0.9rem; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">
+        📌 Acuerdos del Grupo
+      </h3>
+      
+      <form id="form-rule" style="display: flex; gap: 8px; margin-bottom: 16px;">
+        <input type="text" id="input-rule" class="input" placeholder="Ej. El que pierda el tren paga la cena..." required autocomplete="off" style="padding: 10px; font-size: 0.9rem;">
+        <button type="submit" class="btn btn-primary" style="padding: 10px 16px;">Añadir</button>
+      </form>
+
+      <ul id="rules-container" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; max-height: 250px; overflow-y: auto;">
+      </ul>
+    </div>
+  </div>
+  <div id="expense-sheet-backdrop" class="sheet-backdrop hidden"></div>
+
+  <section id="sheet-expense" class="sheet" aria-hidden="true">
+    <div class="sheet-handle"></div>
+    <header class="sheet-header">
+      <h2 id="expense-sheet-title">Nuevo gasto</h2>
+      <button class="icon-btn" id="btn-close-expense-sheet" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24"><path d="M18.3 5.71L12 12l6.3 6.29-1.41 1.41L10.59 13.41 4.29 19.71 2.88 18.3 9.17 12 2.88 5.71 4.29 4.29l6.3 6.3 6.29-6.3z"/></svg>
+      </button>
+    </header>
+    <form id="form-expense" class="event-form">
+      <input type="hidden" id="input-expense-id" />
+
+      <label class="field">
+        <span class="field-label">Descripción</span>
+        <input id="input-expense-desc" class="input" type="text" placeholder="Ej. Cena en el centro" maxlength="80" required />
+      </label>
+
+      <div class="field-row">
+        <label class="field">
+          <span class="field-label">Monto total</span>
+          <input id="input-expense-amount" class="input" type="number" inputmode="decimal" step="0.01" min="0.01" placeholder="0.00" required />
+        </label>
+        <label class="field">
+          <span class="field-label">Fecha</span>
+          <input id="input-expense-date" class="input" type="date" required />
+        </label>
+      </div>
+
+      <label class="field">
+        <span class="field-label">Categoría</span>
+        <div id="category-grid" class="category-grid"></div>
+        <input type="hidden" id="input-expense-category" value="otros" />
+      </label>
+
+      <label class="field">
+        <span class="field-label">Pagado por</span>
+        <select id="select-expense-payer" class="input" required></select>
+      </label>
+
+      <div class="field">
+        <span class="field-label">Dividir entre</span>
+        <div class="split-method-tabs" id="split-method-tabs">
+          <button type="button" class="split-tab active" data-method="equitativo">Equitativo</button>
+          <button type="button" class="split-tab" data-method="exacto">Montos exactos</button>
+          <button type="button" class="split-tab" data-method="porcentaje">Porcentajes</button>
+        </div>
+        <div id="participants-container" class="participants-container"></div>
+        <p class="split-hint" id="split-hint"></p>
+      </div>
+
+      <p class="form-error hidden" id="expense-form-error"></p>
+      <div class="sheet-actions">
+        <button type="button" class="btn btn-ghost hidden" id="btn-delete-expense">Eliminar</button>
+        <button type="submit" class="btn btn-primary btn-block" id="btn-save-expense">Guardar gasto</button>
+      </div>
+    </form>
+  </section>
+
+  <section id="sheet-settle" class="sheet" aria-hidden="true">
+    <div class="sheet-handle"></div>
+    <header class="sheet-header">
+      <h2>Confirmar pago</h2>
+      <button class="icon-btn" id="btn-close-settle-sheet" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24"><path d="M18.3 5.71L12 12l6.3 6.29-1.41 1.41L10.59 13.41 4.29 19.71 2.88 18.3 9.17 12 2.88 5.71 4.29 4.29l6.3 6.3 6.29-6.3z"/></svg>
+      </button>
+    </header>
+    <form id="form-settle" class="event-form">
+      <p id="settle-description" class="settle-description"></p>
+      <label class="field">
+        <span class="field-label">Monto pagado</span>
+        <input id="input-settle-amount" class="input" type="number" inputmode="decimal" step="0.01" min="0.01" required />
+      </label>
+      <div class="sheet-actions">
+        <button type="submit" class="btn btn-primary btn-block">Marcar como pagado</button>
+      </div>
+    </form>
+  </section>
+  <div id="confirm-backdrop" class="sheet-backdrop hidden"></div>
+  <div id="sheet-confirm" class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <h2 id="confirm-title">Confirmar</h2>
+    </div>
+    <p id="confirm-description" style="font-size: 0.9rem; color: var(--muted); margin-bottom: 24px; line-height: 1.4;"></p>
+    <div class="sheet-actions">
+      <button type="button" id="btn-cancel-confirm" class="btn btn-ghost btn-block">Cancelar</button>
+      <button type="button" id="btn-ok-confirm" class="btn btn-primary btn-block">Confirmar</button>
+    </div>
+  </div>
+<div id="pin-backdrop" class="sheet-backdrop hidden"></div>
+  <div id="sheet-pin" class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <h2 id="pin-title">Seguridad</h2>
+    </div>
+    <p id="pin-description" style="font-size: 0.9rem; color: var(--muted); margin-bottom: 16px; line-height: 1.4;"></p>
+    <form id="form-pin" style="display: flex; flex-direction: column; gap: 16px;">
+      <input type="tel" id="input-pin" class="input input-code" placeholder="PIN" autocomplete="off" required maxlength="4" style="text-align: center; letter-spacing: 0.8em; font-size: 1.4rem; padding: 16px;">
+      <div class="sheet-actions">
+        <button type="button" id="btn-cancel-pin" class="btn btn-ghost btn-block">Cancelar</button>
+        <button type="submit" class="btn btn-primary btn-block">Confirmar</button>
+      </div>
+    </form>
+  </div>
   <div id="toast-container" class="toast-container" aria-live="polite"></div>
 
   <script src="app.js"></script>
