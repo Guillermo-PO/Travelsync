@@ -1678,23 +1678,15 @@ document.addEventListener('touchstart', function(event) {
   }
 }, { passive: false });
 
-// 🚀 FIX DEFINITIVO: Medición dinámica de altura para matar el glitch de iOS
+// 🚀 FIX: Medición dinámica de altura para auto-ajustar la pantalla
 function setDocHeight() {
   const vh = window.innerHeight * 0.01;
   document.documentElement.style.setProperty('--vh', `${vh}px`);
 }
 
-// Ejecutamos las mediciones de forma limpia
 window.addEventListener('resize', setDocHeight);
 window.addEventListener('orientationchange', setDocHeight);
-window.addEventListener('pageshow', setDocHeight);
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) setDocHeight();
-});
-requestAnimationFrame(setDocHeight);
-setDocHeight();
-setTimeout(setDocHeight, 100);
-setTimeout(setDocHeight, 300);
-setTimeout(setDocHeight, 1000);
+setDocHeight(); // Se ejecuta al instante
+setTimeout(setDocHeight, 300); // Doble verificación
 
 document.addEventListener("DOMContentLoaded", init);
