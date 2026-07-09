@@ -1687,7 +1687,13 @@ function setDocHeight() {
 // Ejecutamos las mediciones de forma limpia
 window.addEventListener('resize', setDocHeight);
 window.addEventListener('orientationchange', setDocHeight);
+window.addEventListener('pageshow', setDocHeight);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) setDocHeight();
+});
+requestAnimationFrame(setDocHeight);
 setDocHeight();
+setTimeout(setDocHeight, 100);
 setTimeout(setDocHeight, 300);
 setTimeout(setDocHeight, 1000);
 
