@@ -87,7 +87,6 @@ html, body, .screen {
   position: relative;
   overflow: hidden;
 }
-.screen.active { display: flex; }
 
 /* 2. Protección global anti-congelamiento para iOS PWA */
 html, body, .screen, .timeline-container, .day-tabs, .event-card, .sheet-backdrop {
@@ -125,6 +124,17 @@ svg { width: 22px; height: 22px; fill: currentColor; display: block; }
 /* ==========================================================================
    Screens
    ========================================================================== */
+/* ==========================================================================
+   Screens
+   ========================================================================== */
+
+.screen {
+  position: fixed;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  background: var(--bg);
+}
 
 .screen.active { display: flex; }
 
