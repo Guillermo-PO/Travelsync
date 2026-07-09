@@ -103,7 +103,8 @@ input, textarea, .event-notes-inner, .input-code {
 
 body {
   margin: 0;
-  background: var(--bg);
+  /* 🚀 Si queda un hueco en los Max, se pintará del color de tu botonera para disimularlo */
+  background: var(--surface); 
   color: var(--ink);
   font-family: var(--font-body);
   font-size: 16px;
