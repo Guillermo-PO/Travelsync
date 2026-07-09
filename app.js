@@ -1673,6 +1673,18 @@ document.addEventListener('touchend', function (event) {
   lastTouchEnd = now;
 }, { passive: false });
 
+// 🚀 FIX DEFINITIVO: Medición dinámica de altura para matar el glitch de iOS
+function setDocHeight() {
+  // Calculamos el 1% de la altura de la ventana en píxeles exactos
+  const vh = window.innerHeight * 0.01;
+  // Lo inyectamos como una variable CSS (--vh) en la raíz del documento
+  document.documentElement.style.setProperty('--vh', `${vh}px`);
+}
+// Escuchamos cuando la app se abre, cambia de tamaño o rota la pantalla
+window.addEventListener('resize', setDocHeight);
+window.addEventListener('orientationchange', setDocHeight);
+setDocHeight(); // Lo corremos inmediatamente
+
 // Prevenir el zoom con dos dedos (pellizco)
 document.addEventListener('touchstart', function(event) {
   if (event.touches.length > 1) {
