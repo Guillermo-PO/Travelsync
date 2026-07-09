@@ -79,14 +79,23 @@
 
 /* 1. Solo estos contenedores maestros deben medir el 100% de la pantalla */
 html, body, .screen {
-  height: 100vh; /* Fallback si falla el JS */
-  height: calc(var(--vh, 1vh) * 100); /* 🚀 Lee la altura matemática en tiempo real */
-  overscroll-behavior-y: none;
+  /* 1. Fallback base */
+  height: 100%;
   
-  /* Bloqueamos la ventana maestra para que no flote de ninguna manera */
+  /* 2. 🚀 El parche exclusivo de Apple que faltaba */
+  min-height: -webkit-fill-available;
+  
+  /* 3. La variable matemática por JS (Para iPhones lentos o antiguos) */
+  height: calc(var(--vh, 1vh) * 100);
+  
+  /* 4. 🚀 El estándar moderno nativo (Los iPhone 15 y 16 usarán este y anularán los anteriores) */
+  height: 100dvh;
+
+  overscroll-behavior-y: none;
   position: relative;
   overflow: hidden;
 }
+
 /* 2. Protección global anti-congelamiento para iOS PWA */
 html, body, .screen, .timeline-container, .day-tabs, .event-card, .sheet-backdrop {
   touch-action: manipulation !important;
