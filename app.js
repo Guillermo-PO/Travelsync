@@ -1675,11 +1675,18 @@ document.addEventListener('touchend', function (event) {
 
 // 🚀 FIX DEFINITIVO: Medición dinámica de altura para matar el glitch de iOS
 function setDocHeight() {
-  // Calculamos el 1% de la altura de la ventana en píxeles exactos
   const vh = window.innerHeight * 0.01;
-  // Lo inyectamos como una variable CSS (--vh) en la raíz del documento
   document.documentElement.style.setProperty('--vh', `${vh}px`);
 }
+window.addEventListener('resize', setDocHeight);
+window.addEventListener('orientationchange', setDocHeight);
+
+setDocHeight(); // Se ejecuta al instante
+
+// 🚀 NUEVO: Doble verificación para iPhones lentos (calcula de nuevo a los 300ms y al segundo)
+setTimeout(setDocHeight, 300);
+setTimeout(setDocHeight, 1000);
+
 // Escuchamos cuando la app se abre, cambia de tamaño o rota la pantalla
 window.addEventListener('resize', setDocHeight);
 window.addEventListener('orientationchange', setDocHeight);
