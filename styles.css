@@ -873,8 +873,16 @@ button, input, textarea, .day-tab, .event-card, .sheet {
   background: var(--surface);
   border-top: 1px solid var(--border);
 
-  /* 🚀 Suma 8px de padding + el espacio de seguridad nativo del iPhone */
-  padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+  /* 🚀 CASCADA DE FALLBACKS PARA EL ESPACIO INFERIOR */
+  /* 1. Si el sistema de Apple falla por completo, usa 24px fijos */
+  padding: 8px 12px 24px 12px;
+  
+  /* 2. Código de Apple antiguo (Para iOS viejos o bugs en los Max) */
+  padding: 8px 12px calc(8px + constant(safe-area-inset-bottom)) 12px;
+  
+  /* 3. Código de Apple moderno (El estándar actual) */
+  padding: 8px 12px calc(8px + env(safe-area-inset-bottom)) 12px;
+
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.15);
 }
 
