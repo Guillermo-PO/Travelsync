@@ -79,13 +79,16 @@
 
 /* 1. EL ANCLA ABSOLUTA (Fix maestro para la intermitencia en iOS) */
 html, body {
-  position: fixed; /* Se clava a los bordes de la pantalla */
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   width: 100%;
+  /* Cascada de fallbacks: 100% -> --vh calculado por JS -> dvh nativo (el mejor) */
   height: 100%;
+  height: calc(var(--vh, 1vh) * 100);
+  height: 100dvh;
   overflow: hidden;
   overscroll-behavior-y: none;
   background: var(--bg);
