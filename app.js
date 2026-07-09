@@ -1662,10 +1662,8 @@ function init() {
 let lastTouchEnd = 0;
 document.addEventListener('touchend', function (event) {
   const now = (new Date()).getTime();
-  // Si ocurren 2 toques con menos de 300ms de diferencia...
   if (now - lastTouchEnd <= 300) {
     const tag = event.target.tagName;
-    // ...y NO estás tocando una caja de texto, destruye el doble tap.
     if (tag !== 'INPUT' && tag !== 'TEXTAREA') {
       event.preventDefault(); 
     }
@@ -1673,30 +1671,24 @@ document.addEventListener('touchend', function (event) {
   lastTouchEnd = now;
 }, { passive: false });
 
-// 🚀 FIX DEFINITIVO: Medición dinámica de altura para matar el glitch de iOS
-function setDocHeight() {
-  const vh = window.innerHeight * 0.01;
-  document.documentElement.style.setProperty('--vh', `${vh}px`);
-}
-window.addEventListener('resize', setDocHeight);
-window.addEventListener('orientationchange', setDocHeight);
-
-setDocHeight(); // Se ejecuta al instante
-
-// 🚀 NUEVO: Doble verificación para iPhones lentos (calcula de nuevo a los 300ms y al segundo)
-setTimeout(setDocHeight, 300);
-setTimeout(setDocHeight, 1000);
-
-// Escuchamos cuando la app se abre, cambia de tamaño o rota la pantalla
-window.addEventListener('resize', setDocHeight);
-window.addEventListener('orientationchange', setDocHeight);
-setDocHeight(); // Lo corremos inmediatamente
-
 // Prevenir el zoom con dos dedos (pellizco)
 document.addEventListener('touchstart', function(event) {
   if (event.touches.length > 1) {
     event.preventDefault();
   }
 }, { passive: false });
+
+// 🚀 FIX DEFINITIVO: Medición dinámica de altura para matar el glitch de iOS
+function setDocHeight() {
+  const vh = window.innerHeight * 0.01;
+  document.documentElement.style.setProperty('--vh', `${vh}px`);
+}
+
+// Ejecutamos las mediciones de forma limpia
+window.addEventListener('resize', setDocHeight);
+window.addEventListener('orientationchange', setDocHeight);
+setDocHeight();
+setTimeout(setDocHeight, 300);
+setTimeout(setDocHeight, 1000);
 
 document.addEventListener("DOMContentLoaded", init);
